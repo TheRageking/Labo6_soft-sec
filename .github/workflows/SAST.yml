@@ -1,0 +1,29 @@
+name: SAST Pipeline
+
+on:
+  push:
+  schedule:
+    - cron: '0 2 * * *'
+
+jobs:
+  sast:
+    name: Static Application Security Testing
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep SAST scan
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: auto
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
+      - name: Fail on vulnerabilities
+        run: |
+          if grep -q "error" semgrep-results.json 2>/dev/null; then
+            echo "Kwetsbaarheden gedetecteerd! Pipeline geblokkeerd."
+            exit 1
+          fi
